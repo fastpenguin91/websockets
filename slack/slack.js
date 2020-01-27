@@ -68,11 +68,17 @@ io.on('connection', (socket)=>{
 // loop through each namespace
 namespaces.forEach((namespace) => {
   // console.log(namespace);
+  // const thisNs = io.of(namespace.endpoint)
+  console.log("running namespaces loop on: ");
+  console.log(namespace.endpoint);
 
-  io.of(namespace.endpoint).on('connection', (socket)=>{
-    console.log(`${socket.id} has joined ${namespace.endpoint}`);
-  })
-})
+  io.of(namespace.endpoint).on('connection', (nsSocket)=>{
+    console.log(`${nsSocket.id} has joined ${namespace.endpoint}`);
+    // a socket has connected to one of our chatgroup namespaces,
+    // send that ns group info back.
+    nsSocket.emit('nsRoomLoad', namespaces[0].rooms);
+  });
+});
 
 
 
