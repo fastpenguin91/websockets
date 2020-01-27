@@ -69,14 +69,48 @@ io.on('connection', (socket)=>{
 namespaces.forEach((namespace) => {
   // console.log(namespace);
   // const thisNs = io.of(namespace.endpoint)
-  console.log("running namespaces loop on: ");
-  console.log(namespace.endpoint);
+//  console.log("running namespaces loop on: ");
+//  console.log(namespace.endpoint);
 
   io.of(namespace.endpoint).on('connection', (nsSocket)=>{
-    console.log(`${nsSocket.id} has joined ${namespace.endpoint}`);
+    // console.log(`${nsSocket.id} has joined ${namespace.endpoint}`);
     // a socket has connected to one of our chatgroup namespaces,
     // send that ns group info back.
     nsSocket.emit('nsRoomLoad', namespaces[0].rooms);
+    nsSocket.on('joinRoom', (roomToJoin, numberOfUsersCallback)=>{
+      // console.log("room to join: ");
+      // console.log(roomToJoin);
+      // deal with history later
+      nsSocket.join(roomToJoin);
+      io.of('/wiki').in(roomToJoin).clients((error, clients)=>{
+        // console.log(clients.length);
+        numberOfUsersCallback(clients.length);
+      });
+    });
+
+    nsSocket.on('newMessageToServer', (msg)=>{
+      const fullMsg = {
+        text: msg.text,
+        time: Date.now(),
+        username: "jdog",
+        avatar: 'https://via.placeholder.com/30'
+      };
+      console.log("the message");
+      console.log(fullMsg);
+      // Send this message to ALL sockets that are in the room that THIS socket is in.
+      // How can we find out what rooms THIS socket is in?
+      // console.log("socket rooms......");
+      // console.log(nsSocket.rooms);
+      /* User will be in 2nd room in the object list because the socket always joins
+       its own room on connection.
+       Get the keys*/
+//      console.log("1 element of nsSocket.rooms below: ");
+//      console.log(Object.keys(nsSocket.rooms)[1]);
+      const roomTitle = Object.keys(nsSocket.rooms)[1];
+      console.log("room title");
+      console.log(roomTitle);
+      io.of('/wiki').to(roomTitle).emit('messageToClients',fullMsg);
+    });
   });
 });
 
