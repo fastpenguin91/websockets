@@ -78,15 +78,31 @@ namespaces.forEach((namespace) => {
     // send that ns group info back.
     nsSocket.emit('nsRoomLoad', namespaces[0].rooms);
     nsSocket.on('joinRoom', (roomToJoin, numberOfUsersCallback)=>{
+
       // console.log("room to join: ");
       // console.log(roomToJoin);
       // deal with history later
       nsSocket.join(roomToJoin);
-      io.of('/wiki').in(roomToJoin).clients((error, clients)=>{
-        // console.log(clients.length);
-        numberOfUsersCallback(clients.length);
+      // io.of('/wiki').in(roomToJoin).clients((error, clients)=>{
+      //   // console.log(clients.length);
+      //   numberOfUsersCallback(clients.length);
+      // });
+      const nsRoom = namespaces[0].rooms.find((room)=>{
+        return room.roomTitle === roomToJoin;
       });
+      console.log("not sure what I'm looking for broski");
+      console.log(nsRoom);
+
+      nsSocket.emit('historyCatchUp', nsRoom.history);
+
+      // get num of users for all users
+      io.of('/wiki').in(roomToJoin).clients((error, clients)=>{
+        console.log("clients in room: " + clients.length);
+        io.of('/wiki').in(roomToJoin).emit('updateMembers', clients.length);
+      });
+
     });
+
 
     nsSocket.on('newMessageToServer', (msg)=>{
       const fullMsg = {
@@ -107,6 +123,17 @@ namespaces.forEach((namespace) => {
 //      console.log("1 element of nsSocket.rooms below: ");
 //      console.log(Object.keys(nsSocket.rooms)[1]);
       const roomTitle = Object.keys(nsSocket.rooms)[1];
+
+      // we need to find the room object for this room
+      const nsRoom = namespaces[0].rooms.find((room) => {
+        return room.roomTitle === roomTitle;
+      });
+      console.log(" ayyyyyyyy");
+      console.log(nsRoom);
+      console.log("type of: ");
+      console.log(typeof nsRoom);
+      nsRoom.addMessage(fullMsg);
+
       console.log("room title");
       console.log(roomTitle);
       io.of('/wiki').to(roomTitle).emit('messageToClients',fullMsg);
